@@ -15,6 +15,11 @@ steps:
     env:
       - 'SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)'
 
+  # Debug: Print the SSH key and public key (for testing only)
+  - name: 'ubuntu'
+    args: ['bash', '-c', 'echo "Private Key: $(cat /workspace/ssh-key)" && echo "Public Key: $(cat /workspace/ssh-key.pub)"']
+    id: 'Debug SSH keys'
+
   # Step 2: Clone the GitHub repository
   - name: 'gcr.io/cloud-builders/git'
     args: ['clone', 'https://github.com/SuthakarRamani/cicd.git']
