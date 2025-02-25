@@ -7,7 +7,7 @@ steps:
     args:
       - '-c'
       - |
-        # Fetch the key and remove extra newlines
+        # Fetch the key and remove extra newlines or spaces
         echo "$$SSH_KEY" | tr -d '\r' | sed '/^$/d' > /workspace/ssh-key
         chmod 600 /workspace/ssh-key
         # Generate the public key
