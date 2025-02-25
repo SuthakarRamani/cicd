@@ -6,11 +6,12 @@ steps:
     args:
       - '-c'
       - |
+        # Fetch the secret directly inside the bash script
+        SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)
         echo "$SSH_KEY" > /workspace/ssh-key
         chmod 600 /workspace/ssh-key
         ssh-keygen -y -f /workspace/ssh-key > /workspace/ssh-key.pub
-    env:
-      - 'SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)'
+    # No need to use the `env` block anymore, as we're handling the secret inside the bash script
 
   # Step 2: Clone the GitHub repository
   - name: 'gcr.io/cloud-builders/git'
