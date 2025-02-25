@@ -1,0 +1,23 @@
+steps:
+  # Step 1: Fetch the SSH key from Secret Manager
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['secrets', 'versions', 'access', 'latest', '--secret=vm-ssh-key']
+    id: 'Fetch SSH key'
+    env: ['SSH_KEY=$(cat /workspace/ssh-key)']
+
+  # Step 2: Clone the GitHub repository
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/SuthakarRamani/cicd.git']
+    id: 'Clone repository'
+
+  # Step 3: Copy the code to the VM using SCP with the SSH key
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['compute', 'scp', '--recurse', '--ssh-key-file=/workspace/ssh-key', 'cicd/', 'cicd:/root/cicd']
+    id: 'Copy code to VM'
+
+  # Step 4: SSH into the VM and run deployment commands
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['compute', 'ssh', 'cicd', '--ssh-key-file=/workspace/ssh-key', '--command', 'cd /root/cicd && ./deploy.sh']
+    id: 'Run deployment script'
+options:
+  logging: CLOUD_LOGGING_ONLY
