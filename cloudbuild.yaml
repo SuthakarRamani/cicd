@@ -7,18 +7,10 @@ steps:
     args:
       - '-c'
       - |
-        # Fetch the key and remove extra newlines
-        echo "$$SSH_KEY" | tr -d '\r' | sed '/^$/d' > /workspace/ssh-key
+        echo "$$SSH_KEY" > /workspace/ssh-key
         chmod 600 /workspace/ssh-key
-        # Generate the public key
-        ssh-keygen -y -f /workspace/ssh-key > /workspace/ssh-key.pub
     env:
       - 'SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)'
-
-  # Debug: Print the SSH key and public key (for testing only)
-  - name: 'ubuntu'
-    args: ['bash', '-c', 'echo "Private Key: $(cat /workspace/ssh-key)" && echo "Public Key: $(cat /workspace/ssh-key.pub)"']
-    id: 'Debug SSH keys'
 
   # Step 2: Clone the GitHub repository
   - name: 'gcr.io/cloud-builders/git'
