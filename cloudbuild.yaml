@@ -1,17 +1,16 @@
 steps:
   # Step 1: Fetch the SSH key from Secret Manager and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['secrets', 'versions', 'access', 'latest', '--secret=vm-ssh-key']
     id: 'Fetch SSH key'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Fetch the secret directly inside the bash script
-        SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)
-        echo "$SSH_KEY" > /workspace/ssh-key
+        echo "$$SSH_KEY" > /workspace/ssh-key
         chmod 600 /workspace/ssh-key
-        ssh-keygen -y -f /workspace/ssh-key > /workspace/ssh-key.pub
-    # No need to use the `env` block anymore, as we're handling the secret inside the bash script
+    env:
+      - 'SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)'
 
   # Step 2: Clone the GitHub repository
   - name: 'gcr.io/cloud-builders/git'
@@ -20,7 +19,6 @@ steps:
 
   # Step 3: Copy the code to the VM using SCP with the SSH key
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Copy code to VM'
     args: 
       - 'compute'
       - 'scp'
@@ -29,19 +27,19 @@ steps:
       - '--zone=asia-south1-c'  # Replace with your VM's zone
       - 'cicd/'
       - 'cicd:/root/cicd'
+    id: 'Copy code to VM'
 
   # Step 4: SSH into the VM and run deployment commands
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Run deployment script'
     args: 
       - 'compute'
       - 'ssh'
       - 'cicd'
       - '--ssh-key-file=/workspace/ssh-key'
       - '--zone=asia-south1-c'  # Replace with your VM's zone
-      - '--quiet'  # Prevent interactive prompts
       - '--command'
       - 'cd /root/cicd && ./deploy.sh'
+    id: 'Run deployment script'
 
 options:
   logging: CLOUD_LOGGING_ONLY
