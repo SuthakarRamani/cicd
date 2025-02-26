@@ -5,13 +5,13 @@ steps:
     args:
       - -c
       - |
-        mkdir -p ~/root/.ssh
-        gcloud secrets versions access latest --secret=cicd_ssh_private_key > ~/root/.ssh/id_rsa
+        mkdir -p ~/.ssh
+        gcloud secrets versions access latest --secret=cicd_ssh_private_key > ~/.ssh/id_rsa
         chmod 600 ~/root/.ssh/id_rsa
-        gcloud secrets versions access latest --secret=cicd_ssh_pub_key > ~/root/.ssh/id_rsa.pub
-        chmod 600 ~/root/.ssh/id_rsa.pub
+        gcloud secrets versions access latest --secret=cicd_ssh_pub_key > ~/.ssh/id_rsa.pub
+        chmod 600 ~/.ssh/id_rsa.pub
         set -x
-        gcloud compute ssh --ssh-key-file=~/root/.ssh/id_rsa --tunnel-through-iap --zone=$_ZONE $_VM_NAME --project=$_PROJECT_ID --command='/bin/sh /root/cicddeploy.sh' --troubleshoot
+        gcloud compute ssh --ssh-key-file=~/.ssh/id_rsa --tunnel-through-iap --zone=$_ZONE $_VM_NAME --project=$_PROJECT_ID --command='/bin/sh /root/cicddeploy.sh' --troubleshoot
 
 options:
   logging: CLOUD_LOGGING_ONLY
