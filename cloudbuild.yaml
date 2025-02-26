@@ -1,48 +1,17 @@
+---
 steps:
-  # Step 1: Fetch the SSH key from Secret Manager and save it to a file
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['secrets', 'versions', 'access', 'latest', '--secret=vm-ssh-key']
-    id: 'Fetch SSH key'
-    entrypoint: 'bash'
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: /bin/sh
     args:
-      - '-c'
+      - -c
       - |
-        # Fetch the key and remove extra newlines or spaces
-        echo "$$SSH_KEY" | tr -d '\r' | sed '/^$/d' > /workspace/ssh-key
-        chmod 600 /workspace/ssh-key
-        # Generate the public key
-        ssh-keygen -y -f /workspace/ssh-key > /workspace/ssh-key.pub
-    env:
-      - 'SSH_KEY=$(gcloud secrets versions access latest --secret=vm-ssh-key)'
-
-  # Step 2: Clone the GitHub repository
-  - name: 'gcr.io/cloud-builders/git'
-    args: ['clone', 'https://github.com/SuthakarRamani/cicd.git']
-    id: 'Clone repository'
-
-  # Step 3: Copy the code to the VM using SCP with the SSH key
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: 
-      - 'compute'
-      - 'scp'
-      - '--recurse'
-      - '--ssh-key-file=/workspace/ssh-key'
-      - '--zone=asia-south1-c'  # Replace with your VM's zone
-      - 'cicd/'
-      - 'cicd:/root/cicd'
-    id: 'Copy code to VM'
-
-  # Step 4: SSH into the VM and run deployment commands
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: 
-      - 'compute'
-      - 'ssh'
-      - 'cicd'
-      - '--ssh-key-file=/workspace/ssh-key'
-      - '--zone=asia-south1-c'  # Replace with your VM's zone
-      - '--command'
-      - 'cd /root/cicd && ./deploy.sh'
-    id: 'Run deployment script'
+        mkdir -p ~/root/.ssh
+        gcloud secrets versions access latest --secret=cicd_ssh_private_key > ~/root/.ssh/id_rsa
+        chmod 600 ~/root/.ssh/id_rsa
+        gcloud secrets versions access latest --secret=cicd_ssh_pub_key > ~/root/.ssh/id_rsa.pub
+        chmod 600 ~/root/.ssh/id_rsa.pub
+        set -x
+        gcloud compute ssh --ssh-key-file=~/root/.ssh/id_rsa --tunnel-through-iap --zone=$_ZONE $_VM_NAME --project=$_PROJECT_ID --command='/bin/sh /root/cicddeploy.sh'
 
 options:
   logging: CLOUD_LOGGING_ONLY
